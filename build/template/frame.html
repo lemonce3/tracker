@@ -1,0 +1,34 @@
+<html lang="en">
+<head>
+	<script src="${bundleURL}"></script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document(test) - ${port}</title>
+</head>
+<body>
+	<p>${port}</p>
+
+	<a href="http://www.baidu.com">123跳</a>
+	
+	<button onclick="openWindow()">open</button>
+	<button onclick="confirm('hello')" id="confirm">confirm</button>
+	
+	<form method="post" action="/abc" enctype="multipart/form-data">
+		<input type="text">
+		<input type="file" name="abc" id="upload">
+		<p>
+			<input type="checkbox" id="checkbox1" value="first_checkbox">
+			<label for="checkbox1">This is the first checkbox</label>
+		</p>
+	
+		<p>
+			<input type="radio" id="radio1" value="first_checkbox">
+			<label for="radio1">This is the first checkbox</label>
+		</p>
+	</form>
+
+	<iframe src="${urlA}" width="400" height="300"></iframe>
+	<iframe src="${urlB}" width="400" height="300"></iframe>
+</body>
+</html>
