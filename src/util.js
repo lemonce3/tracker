@@ -49,7 +49,39 @@ function http(method = 'get', url = '/', { data = null, async = true, type } = {
 	}());
 }
 
+function getPath(target, pathList = []) {
+	const parentElement = target.parentElement;
+	const infoList = ['attributes', 'classList', 'className', 'tagName'];
+
+	if (parentElement !== document && parentElement) {
+		const result = {};
+
+		infoList.forEach(item => {
+			result[item] = target[item];
+		});
+
+		pathList.push(result);
+
+		return getPath(parentElement, pathList);
+	}
+
+	return pathList;
+}
+
+function getDescribe(target, describeList = []) {
+	const parentElement = target.parentElement;
+
+	if (parentElement !== document && parentElement) {
+		describeList.push(target.textContent);
+
+		return getDescribe(parentElement, describeList);
+	}
+
+	return describeList;
+}
+
 module.exports = {
 	http,
-	Promise
+	Promise,
+	getPath, getDescribe
 };
