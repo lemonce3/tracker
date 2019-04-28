@@ -1,16 +1,12 @@
 const Promise = window.Promise || require('promise-polyfill/lib');
 
-function http(method = 'get', url = '/', { data = null, async = true, type } = {}) {
+function http(method = 'get', url = '/', { data = null, async = false } = {}) {
 	const request = new XMLHttpRequest();
 	const stringData = JSON.stringify(data);
 
 	request.open(method, `${url}?_t=${new Date().getTime()}`, async);
 	request.setRequestHeader('Content-Type', 'application/json');
 	request.setRequestHeader('X-Observer-Forward', 'yes');
-
-	if (type) {
-		request.responseType = type;
-	}
 	
 	return async ? new Promise((resolve, reject) => {
 		request.onreadystatechange = function () {
@@ -20,10 +16,6 @@ function http(method = 'get', url = '/', { data = null, async = true, type } = {
 
 			if (request.status === 200) {
 				try {
-					if (type === 'blob') {
-						return resolve(request.response);
-					}
-
 					resolve(JSON.parse(request.responseText));
 				} catch (error) {
 					resolve(request.responseText);
@@ -39,7 +31,9 @@ function http(method = 'get', url = '/', { data = null, async = true, type } = {
 
 		request.send(data && stringData);
 	}) : (function () {
-		const response = request.send(data && stringData);
+		request.send(data && stringData);
+
+		const response = request.responseText;
 
 		try {
 			return JSON.parse(response);
@@ -49,39 +43,94 @@ function http(method = 'get', url = '/', { data = null, async = true, type } = {
 	}());
 }
 
-function getPath(target, pathList = []) {
-	const parentElement = target.parentElement;
-	const infoList = ['attributes', 'classList', 'className', 'tagName'];
+function forEach(arr, callback) {
+	if (arr.forEach) {
+		arr.forEach(callback);
 
-	if (parentElement !== document && parentElement) {
+		return;
+	}
+
+	for (let index = 0; index < arr.length; index++) {
+		callback(arr[index], index);
+	}
+}
+
+function getPath(element) {
+	const pathList = [];
+	const infoList = ['attributes', 'className', 'tagName'];
+	let parentElement = element.parentElement;
+	
+	while (parentElement !== document && parentElement) {
 		const result = {};
 
-		infoList.forEach(item => {
-			result[item] = target[item];
+		forEach(infoList, item => {
+			result[item] = element[item];
 		});
 
 		pathList.push(result);
 
-		return getPath(parentElement, pathList);
-	}
+		element = parentElement;
+		parentElement = element.parentElement;
+	};
 
 	return pathList;
 }
 
-function getDescribe(target, describeList = []) {
-	const parentElement = target.parentElement;
+function getDescribe({target: element, clientX, clientY}) {
+	const info = {
+		firstChild: null,
+		self: null,
+		previous: null,
+		next: null,
+		parent: null,
+		position: null
+	};
 
-	if (parentElement !== document && parentElement) {
-		describeList.push(target.textContent);
+	info.self = getInfo(element);
 
-		return getDescribe(parentElement, describeList);
+	const {clientWidth, clientHeight} = document.body;
+	info.position = {
+		x: clientX, y: clientY,
+		width: clientWidth,
+		height: clientHeight,
+		scrollTop: document.documentElement.scrollTop || document.body.scrollTop, 
+		scrollLeft: document.documentElement.scrollLeft || document.body.scrollLeft
+	};
+
+	const infoList = {
+		previous: 'previousElementSibling',
+		next: 'nextElementSibling',
+		parent: 'parentElement',
+		firstChild: 'firstElementChild'
+	};
+
+	for(key in infoList) {
+		info[key] = null;
+
+		if (element[infoList[key]]) {
+			info[key] = getInfo(element[infoList[key]]);
+		}
 	}
 
-	return describeList;
+	return info;
+}
+
+function getInfo(element) {
+	const {tagName, childNodes} = element;
+	let text = '';
+
+	forEach(childNodes, child => {
+		if (child.nodeType === 3 && !text) {
+			const value = child.nodeValue.replace(/[\n\s]/g, "");
+
+			text = value.length === 0 ? '' : value;
+		}
+	});
+
+	return {tagName, text};
 }
 
 module.exports = {
-	http,
-	Promise,
+	http, forEach,
 	getPath, getDescribe
 };

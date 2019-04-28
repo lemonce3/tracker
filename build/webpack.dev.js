@@ -8,7 +8,11 @@ module.exports = merge(baseConfig, {
 	devtool: 'source-map',
 	devServer: {
 		proxy: {
-			'/api': config.proxy
+			'/api': {
+				target: config.proxy,
+				proxyTimeout: 0,
+				onProxyReq: (proxyReq, req, res) => req.setTimeout(0)
+			}
 		},
 		host: '0.0.0.0',
 		port: config.port,
