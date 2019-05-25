@@ -3,8 +3,8 @@ const http = require('http');
 const fs = require('fs');
 const template = require('es6-template-strings');
 
-const startPort = config.frameServer.startPort;
-const {host, port} = config;
+const startPort = 3000;
+const {host, port} = { host: '127.0.0.1', port: 8080 };
 
 const frameHTML = fs.readFileSync(path.resolve(__dirname, 'template/frame.html'), 'utf-8');
 const topHTML = fs.readFileSync(path.resolve(__dirname, 'template/top.html'), 'utf-8');

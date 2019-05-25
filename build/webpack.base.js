@@ -1,15 +1,13 @@
 const path = require('path');
 
-global.config = require(path.resolve(process.cwd(), 'config.json'));
-
 module.exports = {
 	entry: {
 		bundle: [
-			path.resolve(__dirname, '../index.js')
+			path.resolve('src/index.js')
 		]
 	},
 	output: {
-		path: path.resolve(__dirname, '../dist'),
+		path: path.resolve('dist'),
 		filename: '[name].js',
 		publicPath: '/'
 	},
@@ -27,5 +25,6 @@ module.exports = {
 			}
 		]
 	},
-	target: 'web'
+	target: 'web',
+	node: false
 };

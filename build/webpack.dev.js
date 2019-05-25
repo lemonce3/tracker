@@ -9,13 +9,13 @@ module.exports = merge(baseConfig, {
 	devServer: {
 		proxy: {
 			'/api': {
-				target: config.proxy,
+				// target: config.proxy,
 				proxyTimeout: 0,
 				onProxyReq: (proxyReq, req, res) => req.setTimeout(0)
 			}
 		},
 		host: '0.0.0.0',
-		port: config.port,
+		port: 8080,
 		hot: false,
 		inline: false
 	},

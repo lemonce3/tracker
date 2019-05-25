@@ -3,19 +3,18 @@ module.exports = function (api) {
 	
 	return {
 		presets: [
-			[
-				'@babel/env', {
-					modules: false,
-					loose: true,
-					targets: {
-						browsers: ['ie 8-11']
-					}
+			['@babel/preset-env', {
+				loose: true,
+				targets: {
+					browsers: ['ie 6-8']
 				}
-			]
+			}]
 		],
 		plugins: [
 			'@babel/plugin-transform-property-literals',
-			'@babel/plugin-transform-member-expression-literals'
+			'@babel/plugin-transform-member-expression-literals',
+			'@babel/plugin-transform-runtime'
+			// '@babel/plugin-transform-modules-commonjs',
 		]
 	};
 };
