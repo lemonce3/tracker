@@ -1,28 +1,32 @@
 const utils = require('./utils');
+const ua = window.navigator.userAgent;
 
-exports.window = {
-	create() {
+const id = request('/window', {
+	method: 'delete',
+	async: false,
+	data: { ua }
+}).id;
 
-	},
-	destroy() {
+request(`/window/${id}`, { method: 'delete' });
 
-	}
+exports.sendAction = function sendAction(type, data) {
+	request(`/window/${id}/action`, {
+		method: 'post',
+		async: false,
+		data: JSON.stringify({ type, data })
+	});
 };
 
-exports.action = {
-	send(type, data) {
-		request('/action', {
-			method: 'post',
-			async: false });
-
-		return {
-			type, data
-		};
-	}
+exports.sendSnapshot = function sendSnapshot(snapshotData) {
+	request(`/window/${id}/snapshot`, {
+		method: 'post',
+		async: false,
+		data: JSON.stringify(snapshotData)
+	});
 };
 
 function request(url, options = {}) {
-	const { method = 'get', data = null, async = true } = options;
+	const { method = 'get', data = undefined, async = true } = options;
 	const xhr = new utils.XMLHttpRequest();
 
 	xhr.open(method, url);
@@ -30,26 +34,26 @@ function request(url, options = {}) {
 	xhr.setRequestHeader('X-Tracker-Forward', 'yes');
 
 	return async ? new utils.Promise((resolve, reject) => {
-		request.onreadystatechange = function () {
-			if (request.readyState !== 4) {
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState !== 4) {
 				return;
 			}
 
-			if (request.status === 200) {
-				resolve(request.responseText);
+			if (xhr.status === 200) {
+				resolve(xhr.responseText);
 			} else {
-				reject(request.status);
+				reject(xhr.status);
 			}
 		};
 
-		request.onerror = function (error) {
+		xhr.onerror = function (error) {
 			reject(error);
 		};
 
-		request.send(data);
+		xhr.send(data);
 	}) : (function () {
 		xhr.send(data);
 
 		return xhr.response;
 	}());
-};
+}

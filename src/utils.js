@@ -32,21 +32,18 @@ exports.map = function map(array, callback) {
 	}
 };
 
-exports.now = Date.now || function now() {
-	return new Date().getTime();
-};
-
 exports.hash = function hash() {
 	return Math.random().toString(16).substr(2, 8);
 };
 
 exports.addEventListener = function addEventListener(dom, eventType, listener) {
+	function listenerWrap(event) {
+		listener(event, event.target || event.srcElement);
+	}
+
 	if (dom.addEventListener) {
-		dom.addEventListener(eventType, listener, false);
+		dom.addEventListener(eventType, listenerWrap, true);
 	} else {
-		dom.attachEvent(`on${eventType}`, function (event) {
-			event.target = event.srcElement;
-			listener(event);
-		});
+		dom.attachEvent(`on${eventType}`, listenerWrap);
 	}
 };

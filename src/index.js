@@ -3,47 +3,35 @@ const api = require('./api');
 const pmc = require('@lemonce3/pmc/src');
 const snapshot = require('./snapshot');
 
-api.action.send('enter', {
+api.sendAction('enter', {
 	referer: document.referrer,
 	href: window.location.href,
 	title: document.title
 });
 
-/**
- * Override Window
- */
 utils.forEach(['alert', 'confirm', 'prompt'], function (type) {
 	const _dialog = window[type];
 	
 	window[type] = function (message) {
-		const returnValue = _dialog.apply(window, message);
-
-		api.action.send(type, { message, returnValue });
+		api.sendAction(type, { message, returnValue: _dialog.call(window, message) });
 	};
 });
 
-/**
- * Listen mouseevent
- */
 utils.forEach(['click', 'dbclick', 'contextmenu', 'change'], function (type) {
 	utils.addEventListener(document, type, function () {
-		api.action.send(type, { targetId: null, windowId: null });
+		api.sendAction(type, { rect: {} });
 	});
 });
 
-/**
- * 收集快照
- */
 const cache = { data: null, hash: null };
 const SNAPSHOT = {
 	CHANNEL: { DRAW: 'snapshot.draw', CALL: 'snapshot.call' },
 	TARGET_ATTRIBUTE: 'lc-target',
-	THROTTLE_INTERVAL: 100,
+	THROTTLE_INTERVAL: 200,
 };
 
-function SnapshotData() {
+function SnapshotData(snapshotHash) {
 	const frameList = snapshot.setFrameHashAttribute();
-	const snapshotHash = cache.hash = utils.hash();
 	const data = { self: snapshot.create(), map: {} };
 
 	snapshot.removeFrameHashAttribute();
@@ -66,40 +54,43 @@ function SnapshotData() {
 	});
 }
 
-utils.addEventListener(document, 'mouseover', function (event) {
-	const { target } = event;
-
+utils.addEventListener(document, 'mouseover', function (event, target) {
+	const snapshotHash = cache.hash = utils.hash();
+	
 	target.setAttribute(SNAPSHOT.TARGET_ATTRIBUTE, 'yes');
-	SnapshotData().then(function () {
+	SnapshotData(snapshotHash).then(function () {
+		target.removeAttribute(SNAPSHOT.TARGET_ATTRIBUTE);
+
 		try {
-			return window.top.__CALL_SNAPSHOT(cache.hash);
+			return window.top.__CALL_SNAPSHOT(snapshotHash);
 		} catch (error) {
-			return pmc.request(window.top, SNAPSHOT.CHANNEL.CALL, cache.hash, { timeout: 50 });
+			return pmc.request(window.top, SNAPSHOT.CHANNEL.CALL, snapshotHash, { timeout: 50 });
 		}
 	});
-	target.removeAttribute(SNAPSHOT.TARGET_ATTRIBUTE);
 });
 
-pmc.on(SNAPSHOT.CHANNEL.DRAW, window.__DRAW_SNAPSHOT = function (hash) {
-	if (cache.hash === hash) {
+pmc.on(SNAPSHOT.CHANNEL.DRAW, window.__DRAW_SNAPSHOT = function (snapshotHash) {
+	if (cache.hash === snapshotHash) {
 		return utils.Promise.resolve(cache.data);
 	}
 	
-	return SnapshotData();
+	return SnapshotData(snapshotHash);
 });
 
 
 if (window.top === window.self) {
 	let timer = null;
-
-	pmc.on(SNAPSHOT.CHANNEL.CALL, window.__CALL_SNAPSHOT = function (hash) {
-		//清除计时器
+	
+	const callSnapshot = window.__CALL_SNAPSHOT = function (snapshotHash) {
 		clearTimeout(timer);
 		
 		timer = setTimeout(function () {
-			window.__DRAW_SNAPSHOT(hash).then(function (data) {
-				console.log(data)
+			window.__DRAW_SNAPSHOT(snapshotHash).then(function (data) {
+				api.sendSnapshot(data);
 			});
 		}, SNAPSHOT.THROTTLE_INTERVAL);
-	});
+	};
+
+	pmc.on(SNAPSHOT.CHANNEL.CALL, callSnapshot);
+	setTimeout(callSnapshot, SNAPSHOT.THROTTLE_INTERVAL);
 }
