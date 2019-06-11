@@ -26,5 +26,8 @@ module.exports = {
 		]
 	},
 	target: 'web',
-	node: false
+	node: false,
+	devServer: {
+		disableHostCheck: true
+	}
 };

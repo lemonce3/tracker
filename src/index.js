@@ -3,6 +3,20 @@ const api = require('./api');
 const pmc = require('@lemonce3/pmc/src');
 const snapshot = require('./snapshot');
 
+const fix = {
+	x: 0,
+	y: 0,
+};
+
+function checkFix(event) {
+	if (event.target.tagName === 'SELECT') {
+		return;
+	}
+
+	fix.x = event.screenX - event.clientX;
+	fix.y = event.screenY - event.clientY;
+}
+
 api.sendAction('enter', {
 	referer: document.referrer,
 	href: window.location.href,
@@ -11,15 +25,34 @@ api.sendAction('enter', {
 
 utils.forEach(['alert', 'confirm', 'prompt'], function (type) {
 	const _dialog = window[type];
-	
+
 	window[type] = function (message) {
 		api.sendAction(type, { message, returnValue: _dialog.call(window, message) });
 	};
 });
 
 utils.forEach(['click', 'dbclick', 'contextmenu', 'change'], function (type) {
-	utils.addEventListener(document, type, function () {
-		api.sendAction(type, { rect: {} });
+	utils.addEventListener(document, type, function (event) {
+		checkFix(event);
+
+		const bounds = event.target.getBoundingClientRect();
+
+		const data = {
+			time: Date.now(),
+			rect: {
+				x: bounds.x + fix.x,
+				y: bounds.y + fix.y,
+				width: bounds.width,
+				height: bounds.height
+			},
+			text: utils.getTextSlice(event.target)
+		};
+
+		if (event.type === 'change') {
+			data.value = event.target.value;
+		}
+
+		api.sendAction(type, data);
 	});
 });
 
@@ -41,7 +74,7 @@ function SnapshotData(snapshotHash) {
 			return frame.element.contentWindow.__DRAW_SNAPSHOT(snapshotHash);
 		} catch (error) {
 			return pmc.request(frame.element.contentWindow, SNAPSHOT.CHANNEL.DRAW, snapshotHash)
-				.catch(function () {});
+				.catch(function () { });
 		}
 	})).then(function (frameDataList) {
 		utils.forEach(frameDataList, function (frameData, index) {
@@ -56,7 +89,7 @@ function SnapshotData(snapshotHash) {
 
 utils.addEventListener(document, 'mouseover', function (event, target) {
 	const snapshotHash = cache.hash = utils.hash();
-	
+
 	target.setAttribute(SNAPSHOT.TARGET_ATTRIBUTE, 'yes');
 	SnapshotData(snapshotHash).then(function () {
 		target.removeAttribute(SNAPSHOT.TARGET_ATTRIBUTE);
@@ -73,17 +106,17 @@ pmc.on(SNAPSHOT.CHANNEL.DRAW, window.__DRAW_SNAPSHOT = function (snapshotHash) {
 	if (cache.hash === snapshotHash) {
 		return utils.Promise.resolve(cache.data);
 	}
-	
+
 	return SnapshotData(snapshotHash);
 });
 
 
 if (window.top === window.self) {
 	let timer = null;
-	
+
 	const callSnapshot = window.__CALL_SNAPSHOT = function (snapshotHash) {
 		clearTimeout(timer);
-		
+
 		timer = setTimeout(function () {
 			window.__DRAW_SNAPSHOT(snapshotHash).then(function (data) {
 				api.sendSnapshot(data);

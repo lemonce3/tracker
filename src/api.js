@@ -1,16 +1,7 @@
 const utils = require('./utils');
-const ua = window.navigator.userAgent;
-
-const id = request('/window', {
-	method: 'delete',
-	async: false,
-	data: { ua }
-}).id;
-
-request(`/window/${id}`, { method: 'delete' });
 
 exports.sendAction = function sendAction(type, data) {
-	request(`/window/${id}/action`, {
+	request('/api/action', {
 		method: 'post',
 		async: false,
 		data: JSON.stringify({ type, data })
@@ -18,7 +9,7 @@ exports.sendAction = function sendAction(type, data) {
 };
 
 exports.sendSnapshot = function sendSnapshot(snapshotData) {
-	request(`/window/${id}/snapshot`, {
+	request('/api/snapshot', {
 		method: 'post',
 		async: false,
 		data: JSON.stringify(snapshotData)
