@@ -13,8 +13,15 @@ function checkFix(event) {
 		return;
 	}
 
-	fix.x = event.screenX - event.clientX;
-	fix.y = event.screenY - event.clientY;
+	const x = event.screenX - event.clientX;
+	const y = event.screenY - event.clientY;
+
+	if (!(x && y)) {
+		return;
+	}
+
+	fix.x = x;
+	fix.y = y;
 }
 
 api.sendAction('enter', {
@@ -45,7 +52,11 @@ utils.forEach(['click', 'dbclick', 'contextmenu', 'change'], function (type) {
 				width: bounds.width,
 				height: bounds.height
 			},
-			text: utils.getTextSlice(event.target)
+			text: utils.getTextSlice(event.target),
+			element: {
+				tagName: event.target.tagName,
+				type: event.target.type
+			}
 		};
 
 		if (event.type === 'change') {
