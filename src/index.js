@@ -38,26 +38,36 @@ utils.forEach(['alert', 'confirm', 'prompt'], function (type) {
 	};
 });
 
-utils.forEach(['click', 'dbclick', 'contextmenu', 'change'], function (type) {
+utils.forEach(['click', 'dblclick', 'contextmenu', 'change'], function (type) {
 	utils.addEventListener(document, type, function (event) {
 		checkFix(event);
 
 		const bounds = event.target.getBoundingClientRect();
 
+		const x = bounds.x
+			? bounds.x
+			: bounds.width > 0
+				? bounds.right - bounds.width
+				: bounds.right;
+
+		const y = bounds.y
+			? bounds.y
+			: bounds.width < 0
+				? bounds.right - bounds.width
+				: bounds.right;
+
 		const data = {
 			time: Date.now(),
 			rect: {
-				x: bounds.x + fix.x,
-				y: bounds.y + fix.y,
+				x: x + fix.x,
+				y: y + fix.y,
 				width: bounds.width,
 				height: bounds.height
 			},
-			text: utils.getTextSlice(event.target),
-			element: {
-				tagName: event.target.tagName,
-				type: event.target.type
-			}
+			text: utils.getTextSlice(event.target)
 		};
+		
+		console.log('bounds', bounds, 'fix', fix, 'rect', data.rect);
 
 		if (event.type === 'change') {
 			data.value = event.target.value;
